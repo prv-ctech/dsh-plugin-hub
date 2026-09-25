@@ -22,7 +22,7 @@ If a merge conflict occurs or checks fail, the workflow stops before changing pr
 
 ## Install in DeepSeek Harness
 
-This repository publishes a Harness plugin package, not a Docker image. The source repository is private. After a release is published and its GitHub Package is public, configure a classic personal access token with `read:packages` for the operating-system user that runs `dsh`.
+This repository publishes a Harness plugin package, not a Docker image. The source repository and GitHub Package are intended to remain private. Configure a GitHub personal access token (classic) with `read:packages` for the operating-system user that runs `dsh`; that GitHub account must also have read access to the package.
 
 In that user's `~/.npmrc`:
 
@@ -43,6 +43,6 @@ Forward the browser's original Host and Origin through Pangolin. Set `DSH_PUBLIC
 
 A `v<package.json version>` tag publishes `@prv-ctech/dsh-plugin-hub` to GitHub Packages at `npm.pkg.github.com` and creates a GitHub Release. Upstream-triggered releases use the same tag as the upstream stable release. The repository does not publish to npmjs.com. A deleted GitHub Package is recreated by the next new upstream release.
 
-An owner can make the package public from **Package settings → Danger Zone → Change visibility → Public**. Public visibility does not make the source repository public. GitHub Packages still requires authentication for package pulls.
+Keep the package private. The npm-compatible GitHub Packages registry requires authentication to install packages; this setup does not publish to npmjs.com.
 
 The release artifact includes `lib/`, `src/`, `client/`, `cordis.patch.yml`, `LICENSE`, `package.json`, and `README.md`. Project documentation, `.env`, and `.npmrc` files are excluded.
