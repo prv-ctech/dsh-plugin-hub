@@ -1,3 +1,5 @@
+> **prv-ctech fork:** This repository tracks the [original DSH Plugin Hub](https://github.com/dshplugin/dsh-plugin-hub) and adds fixes for the `deepseek.prvmr.com` reverse proxy and Unraid container. Use the [fork installation guide](FORK.md); the upstream `dsh-plugin` commands below install the original package.
+
 <div align="center">
 
 <p>
@@ -9,8 +11,7 @@
 **10000+ DeepSeek Harness (DSH) plugins indexed, 10000+ hand-verified, in one community hub, updated daily. Browse, search, download and install by category — free, human-verified, traceable.**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
-[![npm](https://img.shields.io/npm/v/dsh-plugin.svg?style=flat-square)](https://www.npmjs.com/package/dsh-plugin)
-[![CI](https://github.com/dshplugin/dsh-plugin-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/dshplugin/dsh-plugin-hub/actions)
+[Fork package](https://github.com/prv-ctech/dsh-plugin-hub/pkgs/npm/dsh-plugin-hub) · [![CI](https://github.com/prv-ctech/dsh-plugin-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/prv-ctech/dsh-plugin-hub/actions)
 [![Listed on DSH Plugin Hub](https://dsh-plugin.org/badges/listed.svg)](https://dsh-plugin.org/plugins/dshplugin/dsh-plugin-hub)
 [![GitHub stars](https://img.shields.io/github/stars/dshplugin/dsh-plugin-hub.svg?style=flat-square)](https://github.com/dshplugin/dsh-plugin-hub)
 [![Website](https://img.shields.io/badge/website-dsh--plugin.org-blue.svg?style=flat-square)](https://dsh-plugin.org)

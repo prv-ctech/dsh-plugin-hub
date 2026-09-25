@@ -1,0 +1,36 @@
+name: Publish fork package
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@prv-ctech"
+      - run: npm ci
+      - run: npm run check
+      - run: npm run verify:release
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes "Fork release $GITHUB_REF_NAME. See the repository README for installation."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

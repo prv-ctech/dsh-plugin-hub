@@ -12,18 +12,15 @@ import type { LocaleId } from '../types.ts'
 export const SITE_URL = 'https://dsh-plugin.org/'
 
 /** 插件市场源码仓库：头部右上角 GitHub 图标的跳转地址 */
-export const GITHUB_URL = 'https://github.com/dshplugin/dsh-plugin-hub'
+export const GITHUB_URL = 'https://github.com/prv-ctech/dsh-plugin-hub'
 
-/** Hub 自身在目录数据里的仓库标识：头部版本号旁的「可更新」徽标按它定位自己。 */
-export const HUB_REPO = 'dshplugin/dsh-plugin-hub'
+/** Fork identity for the installed package and its update target. */
+export const HUB_REPO = 'prv-ctech/dsh-plugin-hub'
+export const HUB_PACKAGE = '@prv-ctech/dsh-plugin-hub'
+export const UPSTREAM_HUB_REPO = 'dshplugin/dsh-plugin-hub'
 
-/**
- * Hub 自我更新版本控制（接口中心 Pages：api.dsh-plugin.org，静态 JSON 发布）。
- * 发新版 = 在 api-center 的 releases/ 写发版记录 + 重新部署，hub.json 随之更新，
- * 所有已装用户的「可更新」徽标即可见，不再依赖主站目录数据管道。
- * 响应：{ version: string | null, publishedAt: string | null, notes: string | {zh,en} | null }
- */
-export const HUB_UPDATE_URL = 'https://api.dsh-plugin.org/hub.json'
+/** GitHub Release metadata drives this fork's in-app update check. */
+export const HUB_UPDATE_URL = 'https://api.github.com/repos/prv-ctech/dsh-plugin-hub/releases/latest'
 
 /** 接口中心「关注我们」内容（静态 JSON，由 api-center 的 about.md 构建生成，Markdown）。 */
 export const HUB_ABOUT_URL = 'https://api.dsh-plugin.org/about.json'

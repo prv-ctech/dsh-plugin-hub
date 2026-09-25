@@ -9,7 +9,7 @@
  */
 import { type LoaderHandle } from './services/install/install.ts';
 import { type WebServerService } from './http/routes.ts';
-export declare const name = "dsh-plugin";
+export declare const name = "@prv-ctech/dsh-plugin-hub";
 export interface Config {
     /** DSH profile that owns plugin mutations. Defaults to the booted profile. */
     profile?: string;

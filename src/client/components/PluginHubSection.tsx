@@ -317,7 +317,12 @@ export function PluginHubSection({ t: _hostT, locale }: SectionProps) {
     setRestarting(true)
     try {
       // 响应可能在宿主进程被 kill 前返回，也可能直接断连 —— 两种都属正常
-      await fetch('/dsh-plugin-hub/restart', { method: 'POST' })
+      const response = await fetch('/dsh-plugin-hub/restart', { method: 'POST' })
+      if (!response.ok) {
+        setRestarting(false)
+        setToast({ id: Date.now(), kind: 'restartContainer' })
+        return
+      }
     } catch {
       /* 服务已终止，无需处理 */
     }
@@ -344,7 +349,7 @@ export function PluginHubSection({ t: _hostT, locale }: SectionProps) {
     window.setTimeout(poll, 1200)
   }
 
-  const { total, installedName, installedVersion, hasUpdate } = catalog
+  const { total } = catalog
   // 统计数字：官网 /api/stats.json 优先；拉取失败时用已加载列表兜底，避免展示 undefined。
   const statsTotal = catalog.stats?.total ?? total
   const statsVerified = catalog.stats?.verified ?? 0

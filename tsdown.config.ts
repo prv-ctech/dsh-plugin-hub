@@ -17,9 +17,9 @@ import { defineConfig } from 'tsdown'
 import { transform } from 'lightningcss'
 
 // 配置加载器是 ESM，JSON 只能经 require 读取（Node 原生支持）
-const pkg = createRequire(import.meta.url)('./package.json') as { version: string }
+const pkg = createRequire(import.meta.url)('./package.json') as { name: string; version: string }
 
-const id = 'dsh-plugin'
+const id = pkg.name
 
 /** Externals resolved from the loader module table at runtime. */
 const CLIENT_EXTERNALS = ['react', 'react/jsx-runtime']

@@ -5,6 +5,8 @@ node_modules/
 .DS_Store
 .env
 .env.*
+.npmrc
+.npmrc.*
 coverage/
 # 内部文档：发布信息模板等仅供内部使用，禁止提交到公开仓库
 docs/release-notes.template.md

@@ -13,7 +13,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { homedir, release } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
-import { fetchViaCurl, gitLsRemote, probeUrl, systemProxy } from '../services/probe.ts'
+import { fetchViaHttp, gitLsRemote, probeUrl, systemProxy } from '../services/probe.ts'
 import { activeTask, cancelTask, dumpLoaderEntries, getTask, githubRepoOf, githubTarget, globalNpmPackagesOf, hasQueuedTarget, installTargetOf, listPendingRestarts, readProfileArg, startPluginMutation, validPackageName, type LoaderHandle } from '../services/install/install.ts'
 import { recordInstalledVersion, recordResolvedNpmPackage, readInstalledVersions, removeInstalledVersion } from '../services/profile/installed-versions.ts'
 import { resolveNpmPackage } from '../services/install/npm-resolve.ts'
@@ -257,15 +257,17 @@ function sendJson(response: ServerResponse, status: number, value: unknown): voi
   response.end(JSON.stringify(value))
 }
 
-/** POST mutations are only accepted from the local web server origin. */
+/** DSH already authenticates requests; this guard also requires an exact trusted origin. */
 function isSameOrigin(request: IncomingMessage): boolean {
   const origin = request.headers.origin
   const host = request.headers.host
   if (origin === undefined || host === undefined) return false
   try {
     const url = new URL(origin)
+    if (url.host !== host.toLowerCase()) return false
     const localHostnames = new Set(['localhost', '127.0.0.1', '[::1]'])
-    return url.host === host && localHostnames.has(url.hostname)
+    if (localHostnames.has(url.hostname)) return true
+    return url.protocol === 'https:' && url.host === process.env.DSH_PUBLIC_HOST?.trim().toLowerCase()
   } catch {
     return false
   }
@@ -635,7 +637,7 @@ export function mountPluginHubRoutes(webServer: WebServerService, profile: strin
       handler: async (request, response) => {
         if (!requireMethod(request, response, 'GET')) return
         // 目录/统计数据服务端代理：浏览器不再直连 dsh-plugin.org，改经此路由
-        // 转发（curl 子进程注入代理 env），与 npm / git 安装通道走同一代理口径，
+        // 转发（Node HTTP 客户端读取代理 env），与 npm / git 安装通道走同一代理口径，
         // 「npm / git / 目录数据请求统一走该代理」的设置文案因此真实生效。
         const url = new URL(request.url ?? '/', 'http://localhost')
         const settings = loadSettings(profile)
@@ -659,7 +661,7 @@ export function mountPluginHubRoutes(webServer: WebServerService, profile: strin
             // 缓存正文损坏：忽略，走重新拉取并覆盖写盘
           }
         }
-        const r = await fetchViaCurl(target, proxy, 20000)
+        const r = await fetchViaHttp(target, proxy, 20000)
         if (!r.ok || r.body === '') {
           // 实时拉取失败：退回任意年龄的本地缓存（上次成功数据），
           // 避免证书吊销受阻 / 网络抖动时整个插件市场打不开 —— 数据可能过期，但好过空白。
@@ -937,7 +939,7 @@ export function mountPluginHubRoutes(webServer: WebServerService, profile: strin
           const repo = typeof body === 'object' && body !== null && typeof (body as { repo?: unknown }).repo === 'string'
             ? (body as { repo: string }).repo
             : ''
-          if (!validPackageName(name) || name === 'dsh-plugin') {
+          if (!validPackageName(name) || name === '@prv-ctech/dsh-plugin-hub') {
             sendJson(response, 400, { error: 'plugin cannot be uninstalled here' })
             return
           }
@@ -1023,6 +1025,12 @@ export function mountPluginHubRoutes(webServer: WebServerService, profile: strin
       path: '/dsh-plugin-hub/restart',
       handler: (request, response) => {
         if (!requireTrustedPost(request, response)) return
+        // This image is launched through docker-entrypoint.sh with --patch and
+        // --trusted-host. The desktop restart script drops both arguments.
+        if (process.env.DSH_VERSION) {
+          sendJson(response, 409, { error: 'Restart the DeepSeek Harness container in Unraid.' })
+          return
+        }
         // 当前宿主监听端口来自请求 Host 头（localhost:7923），解析失败回退 7923
         const host = request.headers.host ?? ''
         const portMatch = host.match(/:(\d+)$/)

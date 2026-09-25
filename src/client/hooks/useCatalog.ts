@@ -11,7 +11,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { HubPlugin, LocaleId } from '../types.ts'
-import { HUB_REPO, PLUGIN_VERSION } from '../logic/constants.ts'
+import { HUB_REPO, PLUGIN_VERSION, UPSTREAM_HUB_REPO } from '../logic/constants.ts'
 import type { HubAboutInfo, HubUpdateInfo } from '../types.ts'
 import type { SortKey } from '../logic/constants.ts'
 import { fetchCatalog, fetchStats } from '../data/catalog.ts'
@@ -23,7 +23,7 @@ import {
 import type { InstalledItem, InstalledVersionSignal } from '../logic/installed.ts'
 
 /** 插件市场自身仓库：DSH Plugin Hub 不显示在目录里（自己不进自己的插件列表） */
-const SELF_REPO = 'dshplugin/dsh-plugin-hub'
+const SELF_REPO = UPSTREAM_HUB_REPO
 
 /** 市场各排序的默认方向：全部按倒序（Star/Fork 多、更新/收录近的在前） */
 const SORT_DEFAULT_DIR: Record<SortKey, 'asc' | 'desc'> = {
@@ -111,7 +111,7 @@ export function useCatalog(lang: LocaleId) {
         // 目录数据已排除自身，此处再兜底过滤一次，防旧快照仍含自身条目。
         const hadSelf = list.some((p) => p.source?.repo === SELF_REPO)
         // 过滤前单独保留 hub 自身条目：它不进目录列表，但「可更新」徽标的直接更新需要它作为重装目标
-        setHubPlugin(list.find((p) => p.source?.repo === SELF_REPO) ?? null)
+        setHubPlugin({ slug: 'dsh-plugin-hub', displayName: 'DSH Plugin Hub', source: { repo: HUB_REPO } })
         setPlugins(list.filter((p) => p.compatibility?.status === 'verified' && p.source?.repo !== SELF_REPO))
         if (stats) {
           setStats(hadSelf
@@ -201,32 +201,15 @@ export function useCatalog(lang: LocaleId) {
    * 构建时注入的 PLUGIN_VERSION 是运行 bundle 的真实版本；测试/异常场景缺失时
    * 回退到安装时记录的版本。版本号不等即新版（版本号只在发版时变更，绝无降级场景）。
    *
-   * 另加 pnpm 供应链安全门槛：新版本发布还不满 24 小时（+30 分钟缓冲）时，pnpm 会静默
-   * 回退到旧版本，此时若提示「可更新」用户点了也更新不到。publishedAt 由接口中心按 npm
-   * registry 真实发布时间下发（同源），据此判断最准。
+   * Fork updates install from GitHub source, so npm's minimum release age
+   * policy does not apply here.
    */
   const hubHasUpdate = (() => {
     if (!hubUpdateInfo) return false
     const current = PLUGIN_VERSION || versions[HUB_REPO]?.version || null
     if (current === null || hubUpdateInfo.version === current) return false
-    const publishedAt = hubUpdateInfo.publishedAt
-    if (publishedAt) {
-      const publishedMs = Date.parse(publishedAt)
-      if (!Number.isNaN(publishedMs)) {
-        // 24 小时 + 30 分钟缓冲（防网络/CDN 边缘时间偏差）
-        const MIN_RELEASE_AGE_MS = 24 * 60 * 60 * 1000 + 30 * 60 * 1000
-        if (Date.now() - publishedMs < MIN_RELEASE_AGE_MS) return false
-      }
-    }
     return true
   })()
-
-  /** 当前分类下的插件（「全部」时为整个目录）。 */
-  const categoryPlugins = useMemo(() => {
-    if (!plugins) return []
-    if (category === 'all') return plugins
-    return plugins.filter((p) => p.category === category)
-  }, [plugins, category])
 
   const visible = useMemo(() => {
     if (!plugins) return []

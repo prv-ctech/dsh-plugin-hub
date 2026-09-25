@@ -12,7 +12,7 @@
  * views share one source of truth.
  */
 import type { HubPlugin } from '../types.ts'
-import { HUB_REPO } from './constants.ts'
+import { HUB_PACKAGE, HUB_REPO } from './constants.ts'
 import { repoFromInstallTarget } from './install-command.ts'
 
 /** 安装时记录的目录信号（versions 表项）。 */
@@ -170,7 +170,7 @@ export function pluginOfItem(item: InstalledItem): HubPlugin {
  * 它 400 拒绝（服务端多维防线之一）——显示出来只会让用户误点卸载。
  */
 function isHubSelf(name: string, spec: string): boolean {
-  if (name !== 'dsh-plugin') return false
+  if (name !== HUB_PACKAGE) return false
   if (spec.startsWith('file:') || spec.startsWith('link:')) return true
   const repo = repoFromInstallTarget(spec)
   if (isRepoLike(repo) && repo.toLowerCase() === HUB_REPO.toLowerCase()) return true

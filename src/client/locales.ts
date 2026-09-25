@@ -263,6 +263,7 @@ export const zh = {
   doneBtn: '完成',
   // 结果视图：部分插件需重启后才挂载，提供「立即重启 / 稍后重启」选择
   restartNow: '立即重启',
+  restartContainer: '请在 Unraid 中重启 DeepSeek Harness 容器，以保留代理配置。',
   restartLater: '稍后重启',
   restarting: '正在重启…',
   restartHint: '重启会中断正在进行的安装/卸载任务，其进度将丢失。部分插件（如插件市场、顶层 bundle）需重启后才会生效。',
@@ -635,6 +636,7 @@ export const en = {
   doneBtn: 'Done',
   // Result view: some plugins need a restart to mount — offer restart now / later
   restartNow: 'Restart now',
+  restartContainer: 'Restart the DeepSeek Harness container in Unraid to preserve its proxy settings.',
   restartLater: 'Later',
   restarting: 'Restarting…',
   restartHint: 'Restarting interrupts any in-progress install / uninstall task — its progress will be lost. Some plugins (such as plugin markets / top-level bundles) only take effect after a restart.',

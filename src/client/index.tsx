@@ -13,7 +13,7 @@ import { en, zh } from './locales.ts'
 import { PluginHubSection } from './components/PluginHubSection.tsx'
 import './styles/tokens.module.css'
 
-const NS = 'dsh-plugin'
+const NS = '@prv-ctech/dsh-plugin-hub'
 
 export const name = NS
 export const inject = ['slots', 'locale']

@@ -10,7 +10,7 @@
 import { readProfileArg, type LoaderHandle } from './services/install/install.ts'
 import { mountPluginHubRoutes, type WebServerService } from './http/routes.ts'
 
-export const name = 'dsh-plugin'
+export const name = '@prv-ctech/dsh-plugin-hub'
 
 export interface Config {
   /** DSH profile that owns plugin mutations. Defaults to the booted profile. */

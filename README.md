@@ -1,3 +1,5 @@
+> **prv-ctech 分支：**此仓库保留 [原版 DSH Plugin Hub](https://github.com/dshplugin/dsh-plugin-hub)，并为 `deepseek.prvmr.com` 的反向代理和 Unraid 容器添加修复。请按 [分支安装说明](FORK.md) 安装；下方原版说明中的 `dsh-plugin` 命令会安装原版包。
+
 <div align="center">
 
 <p>
@@ -9,8 +11,7 @@
 **DeepSeek Harness Plugin（DSH）插件市场与插件大全，收录 10000+ 插件、人工精选 10000+、每日更新，免费浏览、搜索并按分类发现、下载与安装 DSH 插件，人工验证、来源可溯。**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
-[![npm](https://img.shields.io/npm/v/dsh-plugin.svg?style=flat-square)](https://www.npmjs.com/package/dsh-plugin)
-[![CI](https://github.com/dshplugin/dsh-plugin-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/dshplugin/dsh-plugin-hub/actions)
+[Fork package](https://github.com/prv-ctech/dsh-plugin-hub/pkgs/npm/dsh-plugin-hub) · [![CI](https://github.com/prv-ctech/dsh-plugin-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/prv-ctech/dsh-plugin-hub/actions)
 [![Listed on DSH Plugin Hub](https://dsh-plugin.org/badges/listed.svg)](https://dsh-plugin.org/plugins/dshplugin/dsh-plugin-hub)
 [![GitHub stars](https://img.shields.io/github/stars/dshplugin/dsh-plugin-hub.svg?style=flat-square)](https://github.com/dshplugin/dsh-plugin-hub)
 [![Website](https://img.shields.io/badge/website-dsh--plugin.org-blue.svg?style=flat-square)](https://dsh-plugin.org)

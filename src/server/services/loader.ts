@@ -98,7 +98,7 @@ function nameMatches(entryName: string | undefined, target: string): boolean {
  * 宿主关键包（@deepseek-ai/* 与本插件自身）一律跳过。
  */
 export async function removeLoadedEntry(loader: LoaderHandle, name: string): Promise<boolean> {
-  if (name === 'dsh-plugin' || name.startsWith('@deepseek-ai/')) return false
+  if (name === '@prv-ctech/dsh-plugin-hub' || name.startsWith('@deepseek-ai/')) return false
   // 5s 超时兜底：fiber dispose 卡住时不能让卸载任务（乃至整个队列）被拖死
   const removal = (async () => {
     const entries = dumpLoaderEntries(loader)

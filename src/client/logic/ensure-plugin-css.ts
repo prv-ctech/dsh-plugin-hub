@@ -34,7 +34,7 @@ export function ensurePluginCss(): void {
     const selector = 'style[data-plugin-css=' + JSON.stringify(tagId) + ']'
     if (document.querySelector(selector) !== null) continue
     const tag = document.createElement('style')
-    tag.dataset.plugin = 'dsh-plugin'
+    tag.dataset.plugin = '@prv-ctech/dsh-plugin-hub'
     tag.dataset.pluginCss = tagId
     tag.textContent = css
     document.head.appendChild(tag)
