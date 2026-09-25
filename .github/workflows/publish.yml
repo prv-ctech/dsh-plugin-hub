@@ -3,34 +3,109 @@ name: Publish GitHub Package and release
 on:
   push:
     tags: ["v*"]
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+      release_sha:
+        required: true
+        type: string
 
 jobs:
-  package:
+  validate:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+    outputs:
+      package_name: ${{ steps.metadata.outputs.package_name }}
+      package_version: ${{ steps.metadata.outputs.package_version }}
+      release_tag: ${{ steps.metadata.outputs.release_tag }}
+      release_sha: ${{ steps.metadata.outputs.release_sha }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.release_sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
-          registry-url: https://npm.pkg.github.com
-          scope: "@prv-ctech"
       - run: npm ci
       - run: npm run check
-      - run: npm run verify:release
-      - run: npm publish --registry=https://npm.pkg.github.com
+      - name: Verify release metadata
+        run: npm run verify:release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+      - name: Read package metadata and pack without lifecycle scripts
+        id: metadata
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          RELEASE_SHA: ${{ inputs.release_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          package_name="$(node -p "require('./package.json').name")"
+          package_version="$(node -p "require('./package.json').version")"
+          pack_json="$(npm pack --ignore-scripts --json)"
+          printf '%s' "$pack_json" | node scripts/tools/verify-package-files.mjs
+          package_file="$(printf '%s' "$pack_json" | node -e "let input='';process.stdin.on('data',chunk=>input+=chunk).on('end',()=>{const report=JSON.parse(input);const pkg=Array.isArray(report)?report[0]:Object.values(report)[0];process.stdout.write(pkg.filename)})")"
+          echo "package_name=$package_name" >> "$GITHUB_OUTPUT"
+          echo "package_version=$package_version" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "package_file=$package_file" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-package
+          path: ${{ steps.metadata.outputs.package_file }}
+          if-no-files-found: error
+          retention-days: 1
 
-  release:
-    needs: package
+  publish:
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
     steps:
-      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes "Downstream patch release $GITHUB_REF_NAME. See the repository README for installation."
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-package
+          path: package
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          registry-url: https://npm.pkg.github.com
+          scope: "@prv-ctech"
+      - name: Publish package if the version is missing
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_NAME: ${{ needs.validate.outputs.package_name }}
+          PACKAGE_VERSION: ${{ needs.validate.outputs.package_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_file="$(find package -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          if [[ -z "$package_file" ]]; then
+            echo "Prepared package archive is missing" >&2
+            exit 1
+          fi
+          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "$PACKAGE_NAME@$PACKAGE_VERSION is already published"
+          else
+            npm publish "$package_file" --ignore-scripts --registry=https://npm.pkg.github.com
+          fi
+      - name: Create release if it is missing
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
+          RELEASE_SHA: ${{ needs.validate.outputs.release_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists"
+          else
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --target "$RELEASE_SHA" --title "$RELEASE_TAG" --notes "Downstream patch release $RELEASE_TAG. See the repository README for installation."
+          fi

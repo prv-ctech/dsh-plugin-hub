@@ -1,0 +1,235 @@
+name: Sync upstream release
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-release-sync
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      publish: ${{ steps.release_state.outputs.publish }}
+      release_tag: ${{ steps.upstream.outputs.tag }}
+      release_sha: ${{ steps.finish.outputs.release_sha }}
+      push_main: ${{ steps.finish.outputs.push_main }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Resolve latest upstream stable release
+        id: upstream
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$(gh api repos/dshplugin/dsh-plugin-hub/releases/latest --jq .tag_name)"
+          if [[ ! "$tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "Unsupported upstream release tag: $tag" >&2
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+      - name: Merge upstream tag into the downstream checkout
+        id: merge
+        env:
+          UPSTREAM_TAG: ${{ steps.upstream.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/dshplugin/dsh-plugin-hub.git
+          git fetch --no-tags upstream "refs/tags/$UPSTREAM_TAG:refs/tags/upstream/$UPSTREAM_TAG"
+          base_sha="$(git rev-parse HEAD)"
+          upstream_sha="$(git rev-parse "refs/tags/upstream/$UPSTREAM_TAG^{commit}")"
+          if git merge-base --is-ancestor "$upstream_sha" "$base_sha"; then
+            source_changed=false
+          else
+            cat >> .git/info/attributes <<'EOF'
+          /.github/workflows/** merge=keep-downstream
+          /.gitignore merge=keep-downstream
+          /README.md merge=keep-downstream
+          /PATCHES.md merge=keep-downstream
+          EOF
+            git config merge.keep-downstream.driver 'true %O %A %B'
+            git merge --no-ff --no-edit -m "chore: merge upstream $UPSTREAM_TAG" "$upstream_sha"
+            git checkout "$base_sha" -- .gitignore README.md PATCHES.md .github/workflows
+            git add .gitignore README.md PATCHES.md .github/workflows
+            if ! git diff --cached --quiet; then
+              git commit -m "chore: keep downstream metadata"
+            fi
+            source_changed=true
+          fi
+          echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=$upstream_sha" >> "$GITHUB_OUTPUT"
+          echo "source_changed=$source_changed" >> "$GITHUB_OUTPUT"
+      - name: Decide whether this release needs publishing
+        id: release_state
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPSTREAM_TAG: ${{ steps.upstream.outputs.tag }}
+          UPSTREAM_VERSION: ${{ steps.upstream.outputs.version }}
+          SOURCE_CHANGED: ${{ steps.merge.outputs.source_changed }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current_version="$(node -p "require('./package.json').version")"
+          current_core="${current_version%%-*}"
+          upstream_core="$UPSTREAM_VERSION"
+          version_relation="$(CURRENT_CORE="$current_core" UPSTREAM_CORE="$upstream_core" node -e '
+            const compare = (left, right) => {
+              const current = left.split(".").map(Number)
+              const upstream = right.split(".").map(Number)
+              for (let index = 0; index < 3; index += 1) {
+                if (current[index] > upstream[index]) return "ahead"
+                if (current[index] < upstream[index]) return "behind"
+              }
+              return "same"
+            }
+            console.log(compare(process.env.CURRENT_CORE, process.env.UPSTREAM_CORE))
+          ')"
+          if [[ "$version_relation" == ahead ]]; then
+            if [[ "$SOURCE_CHANGED" == true ]]; then
+              echo "Upstream tag $UPSTREAM_TAG is older than the downstream package version $current_version; refusing to merge it" >&2
+              exit 1
+            fi
+            echo "Downstream package $current_version is already ahead of upstream $UPSTREAM_TAG"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$SOURCE_CHANGED" == true ]] && gh release view "$UPSTREAM_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Upstream tag $UPSTREAM_TAG changed after a downstream release already used that tag; refusing to overwrite it" >&2
+            exit 1
+          fi
+          if [[ "$SOURCE_CHANGED" == false && "$version_relation" == same ]]; then
+            if [[ "$current_version" == "$UPSTREAM_VERSION" ]] && gh release view "$UPSTREAM_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "Release $UPSTREAM_TAG is already published"
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if [[ "$current_version" != "$UPSTREAM_VERSION" ]] && gh release view "v$current_version" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "Current downstream baseline v$current_version already covers upstream $UPSTREAM_TAG"
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+      - name: Set package version to the upstream tag
+        if: steps.release_state.outputs.publish == 'true'
+        env:
+          UPSTREAM_VERSION: ${{ steps.upstream.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current_version="$(node -p "require('./package.json').version")"
+          if [[ "$current_version" != "$UPSTREAM_VERSION" ]]; then
+            npm version "$UPSTREAM_VERSION" --no-git-tag-version --ignore-scripts
+            git add package.json package-lock.json
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(release): v$UPSTREAM_VERSION"
+            fi
+          fi
+      - name: Install and validate the merged release
+        if: steps.release_state.outputs.publish == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.upstream.outputs.tag }}
+        run: |
+          npm ci
+          npm run check
+          npm run verify:release
+      - name: Bundle the validated downstream update
+        id: finish
+        if: steps.release_state.outputs.publish == 'true'
+        env:
+          BASE_SHA: ${{ steps.merge.outputs.base_sha }}
+          RELEASE_TAG: ${{ steps.upstream.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_sha="$(git rev-parse HEAD)"
+          if [[ "$release_sha" == "$BASE_SHA" ]]; then
+            push_main=false
+          else
+            git update-ref refs/heads/upstream-sync "$release_sha"
+            git bundle create "$RUNNER_TEMP/upstream-sync.bundle" refs/heads/upstream-sync "^$BASE_SHA"
+            git bundle verify "$RUNNER_TEMP/upstream-sync.bundle"
+            push_main=true
+          fi
+          echo "release_sha=$release_sha" >> "$GITHUB_OUTPUT"
+          echo "push_main=$push_main" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        if: steps.finish.outputs.push_main == 'true'
+        with:
+          name: upstream-sync-bundle
+          path: ${{ runner.temp }}/upstream-sync.bundle
+          if-no-files-found: error
+          retention-days: 1
+
+  apply:
+    needs: prepare
+    if: needs.prepare.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        if: needs.prepare.outputs.push_main == 'true'
+        with:
+          name: upstream-sync-bundle
+          path: ${{ runner.temp }}
+      - name: Push the validated update to private main
+        if: needs.prepare.outputs.push_main == 'true'
+        env:
+          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle="$RUNNER_TEMP/upstream-sync.bundle"
+          git fetch --no-tags "$bundle" refs/heads/upstream-sync:refs/remotes/prepared/upstream-sync
+          candidate_sha="$(git rev-parse refs/remotes/prepared/upstream-sync)"
+          if [[ "$candidate_sha" != "$RELEASE_SHA" ]]; then
+            echo "Prepared commit does not match the validated release SHA" >&2
+            exit 1
+          fi
+          current_sha="$(git rev-parse HEAD)"
+          if ! git merge-base --is-ancestor "$current_sha" "$candidate_sha"; then
+            echo "Private main changed during validation; the next scheduled sync will retry" >&2
+            exit 1
+          fi
+          if [[ "$current_sha" != "$candidate_sha" ]]; then
+            git push origin "$candidate_sha:refs/heads/main"
+          fi
+
+  publish:
+    needs: [prepare, apply]
+    if: needs.prepare.outputs.publish == 'true'
+    permissions:
+      contents: write
+      packages: write
+    uses: ./.github/workflows/publish.yml
+    with:
+      release_tag: ${{ needs.prepare.outputs.release_tag }}
+      release_sha: ${{ needs.prepare.outputs.release_sha }}

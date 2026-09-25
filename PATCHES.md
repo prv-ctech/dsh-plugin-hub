@@ -4,7 +4,7 @@ This is a private, independent downstream repository based on [dshplugin/dsh-plu
 
 The upstream repository is unchanged. Commits and releases for this project go to its private `prv-ctech` repository; they do not open pull requests or push to the upstream project.
 
-The private `origin` is `prv-ctech/dsh-plugin-hub`. The `upstream` remote is `dshplugin/dsh-plugin-hub`. Upstream updates are manual; no workflow currently syncs them. At the last check on 2026-09-25, upstream `main` was still at `b27f285`.
+The private `origin` is `prv-ctech/dsh-plugin-hub`. The upstream repository is `dshplugin/dsh-plugin-hub`. GitHub Actions checks upstream's latest stable release hourly and syncs new release tags to private `main`.
 
 ## Maintained patches
 
@@ -12,16 +12,13 @@ The private `origin` is `prv-ctech/dsh-plugin-hub`. The `upstream` remote is `ds
 - **Outbound HTTP:** catalog requests and connectivity checks use Undici with the configured proxy, so they do not depend on a `curl` executable in the Harness environment.
 - **Package identity:** uses the `@prv-ctech/dsh-plugin-hub` package and a separate Cordis bundle id and release channel.
 
-## Sync from upstream
+## Automatic upstream updates
 
-For a new checkout, add the original repository once. Then fetch and merge its latest `main` into this downstream `main`:
+The workflow checks the original repository's latest stable GitHub Release tag once per hour. For a new `vX.Y.Z` release, it fetches that tag into a separate upstream ref, merges the upstream commit into this private `main`, sets the package version to `X.Y.Z`, runs `npm run check` and `npm run verify:release`, then publishes the GitHub Package and GitHub Release using the same `vX.Y.Z` tag.
 
-    git remote add upstream https://github.com/dshplugin/dsh-plugin-hub.git
-    git fetch upstream
-    git switch main
-    git merge upstream/main
+The workflow keeps downstream workflows, ignore rules, and project docs from upstream changes. It uses the repository's `GITHUB_TOKEN`; it does not need an npmjs account or a personal access token. Upstream source and dependency scripts run in a validation job with read-only repository permissions. The write job pushes the tested Git bundle, checks the package archive against a runtime-file allowlist, publishes it without running package lifecycle scripts, and creates the release.
 
-If `upstream` is already configured, skip `git remote add`. Review conflicts against the compatibility patches, then run `npm run check` and `npm run verify:release`. Push downstream commits and tags to `origin` only.
+If a merge conflict occurs or checks fail, the workflow stops before changing private `main` or publishing. Resolve the conflict or failure in this repository; the next hourly run retries the upstream release. The initial downstream release remains `v1.4.8-prv.1`; future releases use the upstream release tag exactly.
 
 ## Install in DeepSeek Harness
 
@@ -44,7 +41,7 @@ Forward the browser's original Host and Origin through Pangolin. Set `DSH_PUBLIC
 
 ## GitHub Packages releases
 
-A `v<package.json version>` tag runs checks, publishes `@prv-ctech/dsh-plugin-hub` to GitHub Packages at `npm.pkg.github.com`, and creates a GitHub Release. It does not publish to npmjs.com. A deleted GitHub Package is recreated by the next successful version-tag workflow.
+A `v<package.json version>` tag publishes `@prv-ctech/dsh-plugin-hub` to GitHub Packages at `npm.pkg.github.com` and creates a GitHub Release. Upstream-triggered releases use the same tag as the upstream stable release. The repository does not publish to npmjs.com. A deleted GitHub Package is recreated by the next new upstream release.
 
 An owner can make the package public from **Package settings → Danger Zone → Change visibility → Public**. Public visibility does not make the source repository public. GitHub Packages still requires authentication for package pulls.
 
