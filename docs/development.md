@@ -21,7 +21,7 @@ Before changing Harness integration, read [reference.md](reference.md). Verify h
 | npm run reload | Restart the local Harness development server |
 | npm run verify:release | Validate release metadata and package contents |
 
-The reload script targets the local development Harness. It is not the restart path for the Unraid container.
+The reload script targets a local development Harness profile.
 
 ## Development loop
 

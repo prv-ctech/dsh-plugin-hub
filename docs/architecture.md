@@ -13,7 +13,7 @@ The plugin entry point is src/server/index.ts. It injects the host web server an
 
 Install operations run through the DSH CLI. The task queue reports progress and supports cancellation. Profile services track installed versions and pending restarts. The plugin reuses the running Harness entry when possible, so it does not depend on dsh being available in PATH.
 
-The restart route starts the configured restart script. In the Unraid deployment, restart the container through Unraid so its startup arguments are preserved.
+The restart route starts the configured restart script. The script should use the service controls for the DeepSeek Harness installation.
 
 ## Browser
 
@@ -29,4 +29,4 @@ The client bundle is loaded through the Harness module loader. tsdown builds the
 4. The browser polls task status and displays progress.
 5. On completion, the UI reports whether a Harness restart is required.
 
-The marketplace catalog is fetched from dsh-plugin.org. Reverse-proxy and container-specific setup belongs in [FORK.md](../FORK.md).
+The marketplace catalog is fetched from dsh-plugin.org. Fork-specific package and reverse-proxy setup belongs in [FORK.md](../FORK.md).

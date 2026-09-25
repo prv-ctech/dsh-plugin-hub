@@ -76,7 +76,7 @@ Run this command in the environment that hosts DSH:
 
     dsh --profile web --dump-config
 
-For this Unraid deployment, Pangolin reaches the Harness at `192.168.13.9:3080` on `prv.network`. Use the deployment's configured address and port for HTTP checks. Inspect the active executable and profile instead of assuming host-specific installation paths.
+For this deployment, Pangolin reaches the Harness at `http://192.168.13.9:3080` on `prv.network`. Use the configured address and port for HTTP checks. Inspect the active executable and profile instead of assuming host-specific installation paths.
 
 ## Official references
 

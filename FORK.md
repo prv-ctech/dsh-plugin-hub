@@ -1,27 +1,27 @@
 # prv-ctech DSH Plugin Hub
 
-This is an unofficial fork of [dshplugin/dsh-plugin-hub](https://github.com/dshplugin/dsh-plugin-hub). It adds reverse-proxy and Unraid deployment compatibility changes. The DeepSeek Harness image and upstream repository are not modified.
+This repository packages an unofficial DeepSeek Harness plugin fork of [dshplugin/dsh-plugin-hub](https://github.com/dshplugin/dsh-plugin-hub). It adds reverse-proxy compatibility changes. It is a plugin package, not a Docker image; the upstream repository is not modified.
 
 ## Install from GitHub Packages
 
-The source repository stays private. After the package is republished and changed to Public, install it from GitHub Packages. GitHub Packages still requires authentication for pulls, so add a classic personal access token with `read:packages` to a protected registry config inside the Harness container. The `.npmrc` file below routes the `@prv-ctech` scope to GitHub Packages. The release workflow publishes this package there, not to npmjs.com. Do not put the token in the repository or the install command.
+The source repository stays private. After the package is republished and changed to Public, install it from GitHub Packages. GitHub Packages still requires authentication for pulls, so configure a classic personal access token with `read:packages` for the operating-system user that runs `dsh`. The `.npmrc` file below routes the `@prv-ctech` scope to GitHub Packages. The release workflow publishes this package there, not to npmjs.com. Do not put the token in the repository or the install command.
 
-In the Harness container's `~/.npmrc`:
+In that user's `~/.npmrc`:
 
     @prv-ctech:registry=https://npm.pkg.github.com
     //npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_READ_TOKEN}
 
-Set `GITHUB_PACKAGES_READ_TOKEN` in the container environment, then run:
+Provide `GITHUB_PACKAGES_READ_TOKEN` to the `dsh` process environment, then run:
 
     dsh plugin --profile web add @prv-ctech/dsh-plugin-hub
 
-Remove the original `dsh-plugin` first if it is installed; running both copies registers duplicate routes and settings. Restart the container through Unraid after installing or updating so its startup arguments are preserved.
+Remove the original `dsh-plugin` first if it is installed; running both copies registers duplicate routes and settings. If the active profile does not apply package changes live, restart the DeepSeek Harness Web process using its normal service controls.
 
 ## Reverse proxy and catalog
 
-Forward the browser's original Host and Origin headers through Pangolin. For this deployment, set `DSH_PUBLIC_HOST=deepseek.prvmr.com`; Pangolin targets `192.168.13.9:3080` on `prv.network`. The internal Harness address is not a browser Origin.
+Forward the browser's original Host and Origin headers through Pangolin. For this deployment, set `DSH_PUBLIC_HOST=deepseek.prvmr.com`; Pangolin targets `http://192.168.13.9:3080` on `prv.network`. The internal Harness address is not a browser Origin.
 
-Catalog and diagnostics requests use Node HTTP. Any configured proxy must be reachable from inside the container; 127.0.0.1 refers to the container itself.
+Catalog and diagnostics requests use Node HTTP. Any configured proxy must be reachable from the DeepSeek Harness process; `127.0.0.1` refers to the environment where that process runs.
 
 ## GitHub Packages and releases
 

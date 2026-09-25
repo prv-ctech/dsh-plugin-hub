@@ -1,7 +1,7 @@
 {
   "name": "@prv-ctech/dsh-plugin-hub",
   "version": "1.4.8-prv.1",
-  "description": "Unofficial prv-ctech fork of DSH Plugin Hub with reverse-proxy and container compatibility fixes.",
+  "description": "Unofficial prv-ctech DeepSeek Harness plugin fork with reverse-proxy compatibility fixes.",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
