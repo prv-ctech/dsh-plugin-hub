@@ -20,4 +20,4 @@ Check the official [Harness documentation](https://deepseek-harness.github.io/de
 
 ## Assets
 
-The assets directory contains the project logo and screenshots used by the documentation.
+The [project logo](assets/logo.svg) is retained for repository branding.
