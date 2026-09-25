@@ -16,7 +16,7 @@ The private `origin` is `prv-ctech/dsh-plugin-hub`. The upstream repository is `
 
 The workflow checks the original repository's latest stable GitHub Release tag once per hour. For a new `vX.Y.Z` release, it fetches that tag into a separate upstream ref, merges the upstream commit into this private `main`, sets the package version to `X.Y.Z`, runs `npm run check` and `npm run verify:release`, then publishes the GitHub Package and GitHub Release using the same `vX.Y.Z` tag.
 
-The workflow keeps downstream workflows, ignore rules, and project docs from upstream changes. It uses the repository's `GITHUB_TOKEN`; it does not need an npmjs account or a personal access token. Upstream source and dependency scripts run in a validation job with read-only repository permissions. The write job pushes the tested Git bundle, checks the package archive against a runtime-file allowlist, publishes it without running package lifecycle scripts, and creates the release.
+The workflow keeps downstream workflows, ignore rules, and project docs from upstream changes. It uses the repository's `GITHUB_TOKEN`; it does not need an npmjs account or a personal access token. Upstream source and dependency scripts and package-file checks run in read-only validation jobs. A write job pushes the tested Git bundle; a separate publisher sends the validated archive without running package lifecycle scripts and creates the release.
 
 If a merge conflict occurs or checks fail, the workflow stops before changing private `main` or publishing. Resolve the conflict or failure in this repository; the next hourly run retries the upstream release. The initial downstream release remains `v1.4.8-prv.1`; future releases use the upstream release tag exactly.
 
