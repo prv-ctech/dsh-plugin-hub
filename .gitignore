@@ -8,17 +8,15 @@ node_modules/
 .npmrc
 .npmrc.*
 coverage/
-# 内部文档：发布信息模板等仅供内部使用，禁止提交到公开仓库
+# Internal release templates; keep them out of the repository.
 docs/release-notes.template.md
-# 内部资料：Issue 回复模板与回复输出，仅存本地，禁止提交
+# Internal issue reply templates and drafts; keep them local.
 docs/GitHub Issue 回复模板.md
 docs/回复输出.md
 docs/issue-reply-*.md
 docs/issue-*-reply.md
-# 构建产物：/lib（server 编译输出）、/client（tsdown 打包输出）每次构建整目录重建，
-# 排除后 IDE 索引（尊重 .gitignore）不再反复重扫它们。已跟踪的产物不受影响
-# （git 直装仍需提交产物）；新增的未跟踪产物文件发布时用 `git add -f lib client` 强制加入。
-# 注意：必须写 /lib /client 锚定仓库根 —— 不带前导斜杠的 `client/` 会连 src/client 源码一起忽略，
-# 导致新组件/样式文件永远进不了版本库（曾因此漏提 NotificationsModal 与四个样式模块）。
+# Build outputs are recreated on each build. Root anchors prevent `client/` from
+# also ignoring `src/client/`. Tracked outputs remain tracked; force-add new
+# runtime outputs when preparing a release.
 /lib/
 /client/

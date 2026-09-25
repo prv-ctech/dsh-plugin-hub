@@ -1,7 +1,7 @@
 {
   "name": "@prv-ctech/dsh-plugin-hub",
   "version": "1.4.8-prv.1",
-  "description": "A community plugin marketplace for DeepSeek Harness, built to the official plugin spec — browse, search and install 10000+ human-curated community plugins without leaving the app. · DeepSeek Harness 社区插件市场（遵循官方开发规范）：10000+ 人工精选社区插件，每日更新。",
+  "description": "Unofficial prv-ctech fork of DSH Plugin Hub with reverse-proxy and container compatibility fixes.",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
@@ -13,9 +13,9 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "homepage": "https://dsh-plugin.org",
+  "homepage": "https://github.com/prv-ctech/dsh-plugin-hub",
   "bugs": {
-    "url": "https://github.com/dshplugin/dsh-plugin-hub/issues"
+    "url": "https://github.com/prv-ctech/dsh-plugin-hub/issues"
   },
   "author": "DSH Plugin Hub contributors",
   "funding": {
@@ -46,7 +46,6 @@
     "build": "npm run build:server && npm run build:client",
     "build:server": "rm -rf lib && tsc -p tsconfig.server.json",
     "build:client": "tsdown && node scripts/tools/normalize-client-banner.mjs",
-    "readme:stats": "node scripts/tools/sync-readme-stats.mjs",
     "reload": "bash scripts/run/restart-dev.sh",
     "dev": "bash scripts/run/restart-dev.sh",
     "test": "node --test",

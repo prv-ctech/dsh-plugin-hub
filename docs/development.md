@@ -1,67 +1,52 @@
-# 开发
+# Development
 
-DSH Plugin Hub 的本地构建、测试与迭代指南。
+Local build, test, and release guidance for the prv-ctech fork.
 
-> **写代码前先读 [reference.md](reference.md)**——它是基于官方 DeepSeek Harness
-> 文档（loader、client-modules、profile/bundle、已知坑）的开发规范。
-> 遇到异常行为，先查官方文档和源码，不要猜。
+Before changing Harness integration, read [reference.md](reference.md). Verify host behavior against official documentation and source instead of guessing.
 
-## 前提
+## Requirements
 
-- Node.js >= 22.6（测试运行器用到了类型剥离）。
-- npm（lockfile 已提交；加依赖时保持同步）。
-- 一个启动中的 DeepSeek Harness，才能看到插件实际效果。
+- Node.js 22.6 or newer.
+- npm, with package-lock.json kept in sync when dependencies change.
+- A running DeepSeek Harness instance for interactive verification.
 
-## 常用命令
+## Commands
 
-| 命令                  | 作用                                          |
-| --------------------- | --------------------------------------------- |
-| `npm run build`       | 编译服务端（`lib/`）+ 浏览器（`client/`）     |
-| `npm run typecheck`   | 类型检查（客户端、服务端、测试）              |
-| `npm test`            | 跑单测（Node 内置 runner）                    |
-| `npm run check`       | typecheck + test + build（和 CI 一致）        |
-| `npm run reload`      | 重启 7923 端口的 Harness                     |
-| `npm run readme:stats`| 刷新 README 里的市场统计                      |
-| `npm run verify:release` | 发布前校验包                              |
+| Command | Purpose |
+| --- | --- |
+| npm run build | Build the server and browser bundle |
+| npm run typecheck | Type-check client, server, and tests |
+| npm test | Run the Node.js test suite |
+| npm run check | Type-check, test, and build; same checks used by CI |
+| npm run reload | Restart the local Harness development server |
+| npm run verify:release | Validate release metadata and package contents |
 
-## 开发循环
+The reload script targets the local development Harness. It is not the restart path for the Unraid container.
 
-Harness 是常驻进程，启动时加载插件 bundle，所以每次改动后：
+## Development loop
 
-```sh
-npm run build && npm run reload
-```
+Harness loads plugin bundles at startup. After changing code, rebuild and reload the local development instance:
 
-`reload` 会停掉 7923 端口的 `dsh web`，等端口释放，再脱离地重启。
-开发版通过 `file:` 依赖链接到 `~/.dsh/profiles/web/package.json`。
+    npm run build
+    npm run reload
 
-## 测试
+The development profile links this project from the local filesystem.
 
-测试放在 `tests/`，针对纯服务端逻辑——目前是 `src/server/progress.ts`
-的进度估算辅助函数。用 Node 内置测试运行器，不需要额外框架。
+## Release
 
-```sh
-npm test              # 跑一次
-npm run test:watch    # 监听模式
-```
+1. Update the version in package.json and add release notes to CHANGELOG.md.
+2. Run npm run check and npm run verify:release.
+3. Push a tag matching the package version, such as v1.4.9-prv.1.
+4. GitHub Actions publishes the package to GitHub Packages at npm.pkg.github.com and creates a GitHub Release. The workflow does not publish to npmjs.com and authenticates with its repository-scoped GITHUB_TOKEN.
+5. After the package is recreated, open **Package settings → Danger Zone → Change visibility → Public**. Public visibility makes the package publicly visible and cannot be undone; the source repository remains private. GitHub Packages still requires authentication for package pulls, including public packages.
 
-新增有明确输入/输出的行为（解析、校验、估算）时，在旁边加测试。
+The current package allowlist includes `lib/`, `src/`, `client/`, `cordis.patch.yml`, and `LICENSE`; npm also includes `package.json` and `README.md`. The verified package file list excludes project documentation, `.env`, and `.npmrc` files.
 
-## 发布
+## Layout
 
-1. 升级 `package.json` 版本（以及本项目的 `CHANGELOG.md`）。
-2. 跑 `npm run check` 和 `npm run verify:release`。
-3. `npm publish`——`prepublishOnly` 会重新校验，`prepack` 重新构建。
-
-## 目录结构
-
-```
-src/server/    服务端运行时 + 本地 HTTP API
-src/client/    设置页组件（浏览器 bundle）
-scripts/run/    启动/重载脚本（dev-dsh、reload-dsh）
-scripts/tools/  工具脚本（banner 检查、统计同步、发布校验）
-tests/         单测
-docs/          架构与开发文档
-```
-
-完整图景见 [architecture.md](architecture.md)。
+    src/server/       Harness plugin and local HTTP API
+    src/client/       Settings interface and browser bundle source
+    scripts/run/      Development and restart scripts
+    scripts/tools/    Build checks and release utilities
+    tests/            Node.js tests
+    docs/             Architecture and development documentation

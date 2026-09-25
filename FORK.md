@@ -1,24 +1,32 @@
 # prv-ctech DSH Plugin Hub
 
-This fork tracks [dshplugin/dsh-plugin-hub](https://github.com/dshplugin/dsh-plugin-hub). `upstream` is the original Git remote; `origin` is [prv-ctech/dsh-plugin-hub](https://github.com/prv-ctech/dsh-plugin-hub). Only the Hub is changed; the DeepSeek Harness image is unchanged.
+This is an unofficial fork of [dshplugin/dsh-plugin-hub](https://github.com/dshplugin/dsh-plugin-hub). It adds reverse-proxy and Unraid deployment compatibility changes. The DeepSeek Harness image and upstream repository are not modified.
 
-## Install on the Unraid Harness container
+## Install from GitHub Packages
 
-Remove the original `dsh-plugin` from the web profile if it is installed. Running both copies would register the same Hub routes and Settings section. From the container shell, install this fork:
+The source repository stays private. After the package is republished and changed to Public, install it from GitHub Packages. GitHub Packages still requires authentication for pulls, so add a classic personal access token with `read:packages` to a protected registry config inside the Harness container. The `.npmrc` file below routes the `@prv-ctech` scope to GitHub Packages. The release workflow publishes this package there, not to npmjs.com. Do not put the token in the repository or the install command.
 
-```sh
-dsh plugin --profile web remove dsh-plugin
-dsh plugin --profile web add git+https://github.com/prv-ctech/dsh-plugin-hub.git
-```
+In the Harness container's `~/.npmrc`:
 
-Skip the remove command if the original package is absent. Restart the **container through Unraid** after installation or updates. The Hub's desktop restart command cannot preserve this image's `--patch` and `--trusted-host` startup arguments; inside this image the button explains that the container must be restarted in Unraid.
+    @prv-ctech:registry=https://npm.pkg.github.com
+    //npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_READ_TOKEN}
 
-Pangolin should forward the browser's original `Host` and `Origin` headers. Set the Harness container's `DSH_PUBLIC_HOST` to `deepseek.prvmr.com`, without a scheme. The Hub accepts POST requests only when `Host` matches `Origin`, and the HTTPS origin exactly matches that configured public host. Clearing or rewriting `Origin` causes a 403. Pangolin can keep using `192.168.13.9:3080` as its HTTP upstream on `prv.network`; that internal address is not a browser Origin.
+Set `GITHUB_PACKAGES_READ_TOKEN` in the container environment, then run:
 
-Catalog and diagnostics requests use Node HTTP rather than a `curl` executable, which the Harness image does not include. The Hub's proxy setting, when used, must name a proxy reachable **inside the container**. `127.0.0.1` points to the container itself. A failed catalog fetch still needs network or proxy diagnosis in the container; this fork does not substitute stale data for a working connection.
+    dsh plugin --profile web add @prv-ctech/dsh-plugin-hub
 
-## Package and releases
+Remove the original `dsh-plugin` first if it is installed; running both copies registers duplicate routes and settings. Restart the container through Unraid after installing or updating so its startup arguments are preserved.
 
-The package is [`@prv-ctech/dsh-plugin-hub`](https://github.com/prv-ctech/dsh-plugin-hub/pkgs/npm/dsh-plugin-hub) on GitHub Packages. A `v<package.json version>` tag triggers GitHub Actions to typecheck, test, build, publish the npm package, then create a GitHub Release. The in-app Hub update check reads this fork's latest GitHub Release, and its update action installs this fork from GitHub.
+## Reverse proxy and catalog
 
-GitHub's npm registry requires authentication even for public packages. Installing the Git source as shown above avoids placing a package token in the container. For a registry install, configure the `@prv-ctech` scope for `https://npm.pkg.github.com` and authenticate with a classic token with `read:packages`; keep the token in a private npm configuration outside this repository. Never commit `.npmrc`, environment files, or credentials.
+Forward the browser's original Host and Origin headers through Pangolin. For this deployment, set `DSH_PUBLIC_HOST=deepseek.prvmr.com`; Pangolin targets `192.168.13.9:3080` on `prv.network`. The internal Harness address is not a browser Origin.
+
+Catalog and diagnostics requests use Node HTTP. Any configured proxy must be reachable from inside the container; 127.0.0.1 refers to the container itself.
+
+## GitHub Packages and releases
+
+A v<package.json version> tag runs checks, publishes @prv-ctech/dsh-plugin-hub to GitHub Packages at npm.pkg.github.com, and creates a GitHub Release. The workflow does not publish to npmjs.com. The deleted GitHub Package will be recreated by the next successful version-tag workflow.
+
+After the package is recreated, an owner can make the package public from the package page: **Package settings → Danger Zone → Change visibility → Public**. This makes the package publicly visible and cannot be undone. It does not make the source repository public. GitHub Packages still requires authentication for package pulls, including public packages.
+
+The current package allowlist includes `lib/`, `src/`, `client/`, `cordis.patch.yml`, and `LICENSE`; npm also includes `package.json` and `README.md`. The verified package file list excludes project documentation, `.env`, and `.npmrc` files.
