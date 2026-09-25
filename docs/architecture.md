@@ -2,10 +2,10 @@
 
 DSH Plugin Hub is a Cordis plugin that adds a marketplace to DeepSeek Harness. It has a server side that performs install and profile operations, and a browser side that renders the settings interface.
 
-| Side | Source | Build | Output |
-| --- | --- | --- | --- |
-| Server | src/server/ | TypeScript | lib/ |
-| Browser | src/client/ | tsdown | client/client.js |
+| Side    | Source      | Build      | Output           |
+| ------- | ----------- | ---------- | ---------------- |
+| Server  | src/server/ | TypeScript | lib/             |
+| Browser | src/client/ | tsdown     | client/client.js |
 
 ## Server
 
@@ -17,7 +17,7 @@ The restart route starts the configured restart script. The script should use th
 
 ## Browser
 
-src/client/index.tsx mounts the Plugin Hub settings section. React components and hooks handle catalog browsing, install progress, installed plugins, settings, diagnostics, and logs. src/client/locales.ts contains the English and Chinese interface strings; this fork's project documentation is English.
+src/client/index.tsx mounts the Plugin Hub settings section. React components and hooks handle catalog browsing, install progress, installed plugins, settings, diagnostics, and logs. src/client/locales.ts contains the English and Chinese interface strings; project documentation is English.
 
 The client bundle is loaded through the Harness module loader. tsdown builds the bundle and compiles CSS Modules for injection into the host page. React runtime imports resolve through the host loader.
 
@@ -29,4 +29,4 @@ The client bundle is loaded through the Harness module loader. tsdown builds the
 4. The browser polls task status and displays progress.
 5. On completion, the UI reports whether a Harness restart is required.
 
-The marketplace catalog is fetched from dsh-plugin.org. Fork-specific package and reverse-proxy setup belongs in [FORK.md](../FORK.md).
+The marketplace catalog is fetched from dsh-plugin.org. Downstream package, upstream sync, and reverse-proxy setup belongs in [PATCHES.md](../PATCHES.md).

@@ -1,47 +1,60 @@
 {
   "name": "@prv-ctech/dsh-plugin-hub",
   "version": "1.4.8-prv.1",
-  "description": "Unofficial prv-ctech DeepSeek Harness plugin fork with reverse-proxy compatibility fixes.",
-  "type": "module",
-  "main": "lib/index.js",
-  "types": "lib/types/index.d.ts",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/prv-ctech/dsh-plugin-hub.git"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
+  "description": "Downstream DSH Plugin Hub patch with reverse-proxy Origin/Host and outbound HTTP proxy compatibility.",
+  "keywords": [
+    "agent",
+    "ai",
+    "cli",
+    "community-plugins",
+    "deepseek",
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "harness",
+    "marketplace",
+    "open-source",
+    "plugin-hub",
+    "plugin-marketplace",
+    "plugins",
+    "typescript"
+  ],
   "homepage": "https://github.com/prv-ctech/dsh-plugin-hub",
   "bugs": {
     "url": "https://github.com/prv-ctech/dsh-plugin-hub/issues"
   },
+  "license": "MIT",
   "author": "DSH Plugin Hub contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prv-ctech/dsh-plugin-hub.git"
+  },
   "funding": {
     "type": "custom",
     "url": "https://dsh-plugin.org"
   },
-  "engines": {
-    "node": ">=22.6"
-  },
-  "keywords": [
-    "deepseek",
-    "deepseek-harness",
-    "harness",
-    "dsh",
-    "dsh-plugin",
-    "plugin-marketplace",
-    "plugin-hub",
-    "community-plugins",
-    "plugins",
-    "marketplace",
-    "ai",
-    "agent",
-    "cli",
-    "typescript",
-    "open-source"
+  "files": [
+    "lib",
+    "src",
+    "client",
+    "cordis.patch.yml",
+    "LICENSE"
   ],
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": "./client/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "build": "npm run build:server && npm run build:client",
     "build:server": "rm -rf lib && tsc -p tsconfig.server.json",
@@ -62,8 +75,24 @@
   "dependencies": {
     "undici": "7.30.0"
   },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@types/react": "18.3.31",
+    "lightningcss": "1.33.0",
+    "react": "18.3.1",
+    "tsdown": "0.22.14",
+    "typescript": "7.0.2"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "4.0.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.6"
   },
   "dsh": {
     "bundle": {
@@ -75,35 +104,6 @@
         "@deepseek-ai/dsh-client-ui-slots"
       ],
       "platform": "web"
-    }
-  },
-  "exports": {
-    ".": {
-      "types": "./lib/types/index.d.ts",
-      "default": "./lib/index.js"
-    },
-    "./client": "./client/client.js",
-    "./cordis.patch.yml": "./cordis.patch.yml",
-    "./package.json": "./package.json"
-  },
-  "files": [
-    "lib",
-    "src",
-    "client",
-    "cordis.patch.yml",
-    "LICENSE"
-  ],
-  "devDependencies": {
-    "@types/node": "24.13.3",
-    "@types/react": "18.3.31",
-    "lightningcss": "1.33.0",
-    "react": "18.3.1",
-    "tsdown": "0.22.14",
-    "typescript": "7.0.2"
-  },
-  "peerDependenciesMeta": {
-    "@deepseek-ai/cordis": {
-      "optional": true
     }
   }
 }

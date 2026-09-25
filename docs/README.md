@@ -1,12 +1,12 @@
 # Documentation
 
-Developer documentation for the prv-ctech fork of DSH Plugin Hub.
+Developer documentation for the prv-ctech downstream patch project.
 
-| Document | Purpose |
-| --- | --- |
-| [reference.md](reference.md) | Verified Harness APIs, source links, and known behavior |
-| [architecture.md](architecture.md) | Server/client structure and install lifecycle |
-| [development.md](development.md) | Build, test, local development, and GitHub Packages releases |
+| Document                           | Purpose                                                      |
+| ---------------------------------- | ------------------------------------------------------------ |
+| [reference.md](reference.md)       | Verified Harness APIs, source links, and known behavior      |
+| [architecture.md](architecture.md) | Server/client structure and install lifecycle                |
+| [development.md](development.md)   | Build, test, local development, and GitHub Packages releases |
 
 ## Reading order
 

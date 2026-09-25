@@ -31,6 +31,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes "Fork release $GITHUB_REF_NAME. See the repository README for installation."
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes "Downstream patch release $GITHUB_REF_NAME. See the repository README for installation."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
